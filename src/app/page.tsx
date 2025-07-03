@@ -1,9 +1,8 @@
 'use client';
 
-import ComponentA from "@/components/componentA";
-import ComponentB from "@/components/componentB";
-import ComponentC from "@/components/componentC";
-import ComponentD from "@/components/componentD";
+import ComponentA from "@/components/ComponentA";
+import ComponentB from "@/components/ComponentB";
+import ComponentC from "@/components/ComponentC";
 
 export default function Home() {
   return (
@@ -23,11 +22,6 @@ export default function Home() {
       <section>
         <h2 className="text-2xl font-semibold mb-4">Component C – Compose Prompts</h2>
         <ComponentC />
-      </section>
-
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">Component D – Image Gallery</h2>
-        <ComponentD />
       </section>
     </main>
   );
