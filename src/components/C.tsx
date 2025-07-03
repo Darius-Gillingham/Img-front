@@ -8,71 +8,46 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function C() {
-  const [wordsets, setWordsets] = useState<string[][]>([]);
-  const [examplePrompt, setExamplePrompt] = useState('');
+export default function ComponentC() {
+  const [wordsetNames, setWordsetNames] = useState<string[]>([]);
 
   useEffect(() => {
-    async function fetchWordsets() {
-      const { data: files, error } = await supabase.storage
-        .from('wordsets')
-        .list('', {
-          limit: 100,
-          sortBy: { column: 'name', order: 'desc' }
-        });
+    async function fetchWordsetList() {
+      const { data, error } = await supabase.storage.from('wordsets').list('', {
+        limit: 100,
+        sortBy: { column: 'name', order: 'desc' }
+      });
 
-      if (error || !files) {
+      if (error) {
         console.warn('✗ Failed to list wordsets:', error);
         return;
       }
 
-      const sets: string[][] = [];
-
-      for (const file of files) {
-        if (!file.name.endsWith('.json')) continue;
-        const { data } = await supabase.storage.from('wordsets').download(file.name);
-        if (!data) continue;
-
-        const text = await data.text();
-        try {
-          const parsed = JSON.parse(text);
-          if (Array.isArray(parsed.wordsets)) {
-            sets.push(...parsed.wordsets);
-          }
-        } catch {
-          console.warn(`✗ Failed to parse ${file.name}`);
-        }
-      }
-
-      setWordsets(sets);
-
-      // Show example prompt using one of them
-      if (sets.length > 0) {
-        const ws = sets[Math.floor(Math.random() * sets.length)];
-        const prompt = `No text overlay. A visual interpretation of: ${ws.join(', ')}.`;
-        setExamplePrompt(prompt);
-      }
+      const names = data?.filter(f => f.name.endsWith('.json')).map(f => f.name) || [];
+      setWordsetNames(names);
     }
 
-    fetchWordsets();
+    fetchWordsetList();
   }, []);
 
   return (
     <div className="space-y-4">
-      <p className="text-gray-700">
-        This panel demonstrates how <code>serverC</code> works. It reads a single wordset file from Supabase, constructs a prompt like “a visual interpretation of X”, and sends that prompt to DALL·E to generate an image.
+      <p className="text-gray-700 text-sm">
+        This component explains what <code>serverC</code> does: it runs continuously, selecting a single wordset JSON from the Supabase <code>wordsets</code> bucket, extracting its keywords, and using them to generate a prompt. That prompt is sent to DALL·E 3 via OpenAI to produce a 1024×1024 image.
       </p>
 
-      {examplePrompt && (
-        <div className="p-4 bg-gray-100 border rounded text-sm text-gray-800">
-          <strong>Example Prompt:</strong> <br />
-          {examplePrompt}
-        </div>
-      )}
-
-      <p className="text-gray-500 text-sm">
-        Images are automatically uploaded to the <code>generated-images</code> bucket.
+      <p className="text-gray-700 text-sm">
+        Each generated image is uploaded to the <code>generated-images</code> bucket in Supabase with a timestamped filename. This module runs automatically every minute and creates a batch of new images using only one wordset at a time.
       </p>
+
+      <div className="border-t pt-4">
+        <h3 className="font-medium text-lg">Recent Wordsets</h3>
+        <ul className="list-disc list-inside text-sm text-gray-600">
+          {wordsetNames.map((name, idx) => (
+            <li key={idx}>{name}</li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
