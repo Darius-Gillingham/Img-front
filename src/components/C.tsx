@@ -3,15 +3,14 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export default function ComponentC() {
   const [wordsetNames, setWordsetNames] = useState<string[]>([]);
 
   useEffect(() => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     async function fetchWordsetList() {
       const { data, error } = await supabase.storage.from('wordsets').list('', {
         limit: 100,
@@ -32,19 +31,19 @@ export default function ComponentC() {
 
   return (
     <div className="space-y-4">
-      <p className="text-gray-700 text-sm">
-        This component explains what <code>serverC</code> does: it runs continuously, selecting a single wordset JSON from the Supabase <code>wordsets</code> bucket, extracting its keywords, and using them to generate a prompt. That prompt is sent to DALL·E 3 via OpenAI to produce a 1024×1024 image.
-      </p>
-
-      <p className="text-gray-700 text-sm">
-        Each generated image is uploaded to the <code>generated-images</code> bucket in Supabase with a timestamped filename. This module runs automatically every minute and creates a batch of new images using only one wordset at a time.
-      </p>
-
-      <div className="border-t pt-4">
-        <h3 className="font-medium text-lg">Recent Wordsets</h3>
-        <ul className="list-disc list-inside text-sm text-gray-600">
-          {wordsetNames.map((name, idx) => (
-            <li key={idx}>{name}</li>
+      <p className="text-lg">Component C explains what <strong>serverC</strong> does:</p>
+      <ul className="list-disc pl-5 text-gray-700">
+        <li>Fetches all available wordset files from the <code>wordsets</code> Supabase bucket.</li>
+        <li>Constructs a DALL·E 3 prompt for each wordset (e.g., “No text overlay. A visual interpretation of: dog, spaceship, ocean”).</li>
+        <li>Calls OpenAI’s image generation API with each prompt.</li>
+        <li>Downloads and uploads generated PNGs to the <code>generated-images</code> Supabase bucket.</li>
+        <li>Runs this process in a loop at a fixed interval (default: 1 minute).</li>
+      </ul>
+      <div>
+        <h3 className="mt-6 font-semibold">Recently Discovered Wordsets:</h3>
+        <ul className="list-inside list-disc text-sm text-gray-600">
+          {wordsetNames.map(name => (
+            <li key={name}>{name}</li>
           ))}
         </ul>
       </div>
