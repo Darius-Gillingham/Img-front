@@ -13,11 +13,11 @@ export default function ComponentC() {
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    async function fetchImageUrls() {
+    async function fetchRandomImageUrls() {
       const { data, error } = await supabase.storage
         .from('generated-images')
         .list('', {
-          limit: 100,
+          limit: 1000,
           sortBy: { column: 'name', order: 'desc' },
         });
 
@@ -26,21 +26,25 @@ export default function ComponentC() {
         return;
       }
 
+      const allPngs = (data ?? []).filter((f) => f.name.endsWith('.png'));
+
+      // Shuffle
+      const shuffled = allPngs.sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, 30); // Show 30 random images
+
       const urls = await Promise.all(
-        (data ?? [])
-          .filter((f) => f.name.endsWith('.png'))
-          .map(async (file) => {
-            const { data: urlData } = await supabase.storage
-              .from('generated-images')
-              .createSignedUrl(file.name, 3600);
-            return urlData?.signedUrl || '';
-          })
+        selected.map(async (file) => {
+          const { data: urlData } = await supabase.storage
+            .from('generated-images')
+            .createSignedUrl(file.name, 3600);
+          return urlData?.signedUrl || '';
+        })
       );
 
       setImageUrls(urls.filter(Boolean));
     }
 
-    fetchImageUrls();
+    fetchRandomImageUrls();
   }, []);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -52,7 +56,7 @@ export default function ComponentC() {
 
   return (
     <div className="relative w-full space-y-4">
-      <h2 className="text-xl font-bold pl-2">Generated Images</h2>
+      <h2 className="text-xl font-bold pl-2">Random Images</h2>
       <div className="relative">
         {/* Left Button */}
         <button
