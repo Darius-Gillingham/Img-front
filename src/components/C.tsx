@@ -1,51 +1,89 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function ComponentC() {
-  const [wordsetNames, setWordsetNames] = useState<string[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    async function fetchWordsetList() {
-      const { data, error } = await supabase.storage.from('wordsets').list('', {
-        limit: 100,
-        sortBy: { column: 'name', order: 'desc' }
-      });
+    async function fetchImageUrls() {
+      const { data, error } = await supabase.storage
+        .from('generated-images')
+        .list('', {
+          limit: 100,
+          sortBy: { column: 'name', order: 'desc' },
+        });
 
       if (error) {
-        console.warn('✗ Failed to list wordsets:', error);
+        console.warn('✗ Failed to list images:', error);
         return;
       }
 
-      const names = data?.filter(f => f.name.endsWith('.json')).map(f => f.name) || [];
-      setWordsetNames(names);
+      const urls = await Promise.all(
+        (data ?? [])
+          .filter((f) => f.name.endsWith('.png'))
+          .map(async (file) => {
+            const { data: urlData } = await supabase.storage
+              .from('generated-images')
+              .createSignedUrl(file.name, 3600);
+            return urlData?.signedUrl || '';
+          })
+      );
+
+      setImageUrls(urls.filter(Boolean));
     }
 
-    fetchWordsetList();
+    fetchImageUrls();
   }, []);
 
+  const scroll = (direction: 'left' | 'right') => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const scrollAmount = container.offsetWidth * 0.8;
+    container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+  };
+
   return (
-    <div className="space-y-4">
-      <p className="text-lg">Component C explains what <strong>serverC</strong> does:</p>
-      <ul className="list-disc pl-5 text-gray-700">
-        <li>Fetches all available wordset files from the <code>wordsets</code> Supabase bucket.</li>
-        <li>Constructs a DALL·E 3 prompt for each wordset (e.g., “No text overlay. A visual interpretation of: dog, spaceship, ocean”).</li>
-        <li>Calls OpenAI’s image generation API with each prompt.</li>
-        <li>Downloads and uploads generated PNGs to the <code>generated-images</code> Supabase bucket.</li>
-        <li>Runs this process in a loop at a fixed interval (default: 1 minute).</li>
-      </ul>
-      <div>
-        <h3 className="mt-6 font-semibold">Recently Discovered Wordsets:</h3>
-        <ul className="list-inside list-disc text-sm text-gray-600">
-          {wordsetNames.map(name => (
-            <li key={name}>{name}</li>
+    <div className="relative w-full space-y-4">
+      <h2 className="text-xl font-bold pl-2">Generated Images</h2>
+      <div className="relative">
+        {/* Left Button */}
+        <button
+          onClick={() => scroll('left')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white shadow rounded-full hover:bg-gray-100 hidden sm:block"
+        >
+          <ChevronLeft size={24} />
+        </button>
+
+        {/* Image Row */}
+        <div
+          ref={scrollRef}
+          className="flex overflow-x-auto scroll-smooth space-x-4 px-2 py-2 scrollbar-hide"
+        >
+          {imageUrls.map((url, index) => (
+            <img
+              key={index}
+              src={url}
+              alt={`Generated image ${index + 1}`}
+              className="h-48 w-auto flex-shrink-0 rounded shadow"
+            />
           ))}
-        </ul>
+        </div>
+
+        {/* Right Button */}
+        <button
+          onClick={() => scroll('right')}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white shadow rounded-full hover:bg-gray-100 hidden sm:block"
+        >
+          <ChevronRight size={24} />
+        </button>
       </div>
     </div>
   );
