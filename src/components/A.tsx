@@ -36,7 +36,7 @@ export default function A() {
         .from('prompt_components')
         .select('*')
         .order('id', { ascending: false })
-        .limit(20);
+        .limit(10); // Reduced from 20 to 10
 
       if (data) {
         setRows(data as ComponentSet[]);
