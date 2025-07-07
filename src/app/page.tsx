@@ -1,5 +1,5 @@
 // File: app/page.tsx
-// Commit: render dashboard layout with sections A, B, and C
+// Commit: structure walkthrough with uniform professional layout for modular components A through C
 
 'use client';
 
@@ -9,23 +9,15 @@ import C from "@/components/C";
 
 export default function Home() {
   return (
-    <main className="min-h-screen p-8 space-y-16 bg-white text-gray-900">
-      <h1 className="text-4xl font-bold text-center mb-12">🧬 Image Gen System Dashboard</h1>
-
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">A – Prompt Component Viewer</h2>
-        <A />
-      </section>
-
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">B – Generate Wordsets</h2>
-        <B />
-      </section>
-
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">C – Compose Prompts</h2>
-        <C />
-      </section>
+    <main className="min-h-screen w-full bg-white text-gray-900 px-4 sm:px-8 py-16 space-y-32">
+      {[A, B, C].map((Component, index) => (
+        <section
+          key={index}
+          className="w-full max-w-6xl mx-auto space-y-8 border-b pb-24 last:border-none last:pb-0"
+        >
+          <Component />
+        </section>
+      ))}
     </main>
   );
 }
