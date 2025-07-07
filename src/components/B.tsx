@@ -1,9 +1,9 @@
 // File: app/components/B.tsx
-// Commit: mimic serverB by allowing manual wordset creation and upload to Supabase `wordsets/` bucket
+// Commit: display recent serverB-generated wordsets and explain their origin in prompt_components table
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -12,68 +12,86 @@ const supabase = createClient(
 );
 
 export default function ComponentB() {
-  const [inputWords, setInputWords] = useState('');
-  const [message, setMessage] = useState('');
+  const [wordsets, setWordsets] = useState<string[][]>([]);
+  const [filename, setFilename] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  useEffect(() => {
+    async function loadLatestWordset() {
+      const { data: files, error: listError } = await supabase.storage
+        .from('wordsets')
+        .list('', {
+          limit: 100,
+          sortBy: { column: 'name', order: 'desc' },
+        });
 
-    const words = inputWords
-      .split(',')
-      .map(w => w.trim())
-      .filter(Boolean);
+      if (listError || !files || files.length === 0) {
+        console.warn('✗ Failed to list wordset files:', listError);
+        return;
+      }
 
-    if (words.length === 0) {
-      setMessage('✗ Please enter at least one word.');
-      return;
+      const latest = files.find(f => f.name.endsWith('.json'));
+      if (!latest) return;
+
+      setFilename(latest.name);
+
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('wordsets')
+        .download(latest.name);
+
+      if (downloadError || !fileData) {
+        console.warn('✗ Failed to download latest wordset:', downloadError);
+        return;
+      }
+
+      const text = await fileData.text();
+      const parsed = JSON.parse(text);
+      if (parsed?.wordsets && Array.isArray(parsed.wordsets)) {
+        setWordsets(parsed.wordsets.slice(0, 10)); // Show up to 10
+      }
     }
 
-    const wordsetObj = { wordsets: [words] };
-    const fileName = `wordset-${Date.now()}.json`;
-
-    const blob = new Blob([JSON.stringify(wordsetObj, null, 2)], {
-      type: 'application/json',
-    });
-
-    const { error } = await supabase.storage
-      .from('wordsets')
-      .upload(fileName, blob, {
-        upsert: false,
-      });
-
-    if (error) {
-      console.error('✗ Upload failed:', error);
-      setMessage('✗ Upload failed.');
-    } else {
-      setMessage(`✓ Wordset uploaded as ${fileName}`);
-      setInputWords('');
-    }
-  }
+    loadLatestWordset();
+  }, []);
 
   return (
-    <div className="space-y-4">
-      <p className="text-gray-700">
-        This panel mimics <code>serverB</code>, which creates new wordset JSON files and uploads them to the <code>wordsets</code> bucket in Supabase. Input a list of descriptive words and submit to generate a new wordset.
+    <div className="space-y-4 text-gray-800 text-sm leading-relaxed">
+      <p>
+        This panel displays real-time introspection of the <code>serverB.js</code> backend process. That script constructs
+        wordsets by randomly sampling from a Supabase table called <code>prompt_components</code>, which contains nine key columns:
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-2">
-        <textarea
-          value={inputWords}
-          onChange={e => setInputWords(e.target.value)}
-          placeholder="Enter words, separated by commas"
-          className="w-full p-2 border border-gray-300 rounded-md"
-          rows={3}
-        />
-        <button
-          type="submit"
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Upload Wordset
-        </button>
-      </form>
+      <ul className="list-disc list-inside pl-4">
+        <li>noun1</li>
+        <li>noun2</li>
+        <li>verb</li>
+        <li>adjective1</li>
+        <li>adjective2</li>
+        <li>style</li>
+        <li>setting</li>
+        <li>era</li>
+        <li>mood</li>
+      </ul>
 
-      {message && (
-        <p className="text-sm text-gray-600 whitespace-pre-line">{message}</p>
+      <p>
+        From this table, <code>serverB.js</code> selects one random value per column to create a single wordset array. It batches 20 of these
+        into a JSON structure and uploads them into the <code>wordsets</code> storage bucket with timestamped filenames.
+      </p>
+
+      {filename && (
+        <div className="bg-gray-50 border rounded p-3 text-xs text-gray-600">
+          <div className="mb-2 font-medium">Loaded from: <code>{filename}</code></div>
+          <div className="space-y-1">
+            {wordsets.map((set, i) => (
+              <div key={i} className="font-mono truncate">
+                [{set.map(word => `"${word}"`).join(', ')}]
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!filename && (
+        <p className="text-gray-500">No wordsets available for display.</p>
       )}
     </div>
   );
