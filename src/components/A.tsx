@@ -132,6 +132,12 @@ export default function A() {
 
       <section className="space-y-4 border-t pt-6">
         <h3 className="text-lg font-medium text-gray-700">Scrambled Wordset</h3>
+        <p>
+          This section mirrors what <code>serverB</code> does during the generation process. It takes real component sets from your Supabase
+          database and creates a new randomized wordset by sampling one field at a time from across the most recent entries. No new data is
+          generated — this is a combinatorial remix of actual production input, providing insight into how recombination logic drives final output.
+        </p>
+
         <button
           onClick={generateScramble}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
