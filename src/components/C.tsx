@@ -1,3 +1,6 @@
+// File: app/components/ComponentC.tsx
+// Commit: add horizontal image scroller pulling signed URLs from Supabase bucket
+
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
