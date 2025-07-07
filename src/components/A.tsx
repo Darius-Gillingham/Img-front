@@ -46,6 +46,12 @@ export default function A() {
     loadPromptComponentRows();
   }, []);
 
+  useEffect(() => {
+    if (rows.length > 0 && !scramble) {
+      generateScramble();
+    }
+  }, [rows]);
+
   function generateScramble() {
     const randomSet: ComponentSet = {
       noun1: '',
@@ -69,7 +75,6 @@ export default function A() {
 
   return (
     <div className="space-y-8 text-gray-800 text-sm max-w-4xl mx-auto">
-      {/* Header */}
       <header className="space-y-2">
         <h2 className="text-2xl font-semibold text-blue-900">Step 1: Prompt Vocabulary Generation</h2>
         <p>
@@ -82,7 +87,6 @@ export default function A() {
         </p>
       </header>
 
-      {/* Technical Steps */}
       <section className="space-y-4">
         <h3 className="text-lg font-medium text-gray-700">How It Works</h3>
         <ol className="list-decimal list-inside space-y-2 pl-2">
@@ -107,7 +111,6 @@ export default function A() {
         </ol>
       </section>
 
-      {/* Live Preview */}
       <section className="space-y-4">
         <h3 className="text-lg font-medium text-gray-700">Recent Component Sets</h3>
         <ul className="grid gap-4">
@@ -127,14 +130,13 @@ export default function A() {
         </ul>
       </section>
 
-      {/* Scramble Simulation */}
       <section className="space-y-4 border-t pt-6">
-        <h3 className="text-lg font-medium text-gray-700">Generate Scrambled Wordset</h3>
+        <h3 className="text-lg font-medium text-gray-700">Scrambled Wordset</h3>
         <button
           onClick={generateScramble}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
         >
-          Scramble Wordset
+          Rescramble
         </button>
 
         {scramble && (
@@ -152,7 +154,6 @@ export default function A() {
         )}
       </section>
 
-      {/* Footer */}
       <footer className="pt-4 text-gray-500 text-xs border-t">
         This module reflects the live output of GPT-driven prompt vocabulary generation. All entries are real data directly from your Supabase table.
       </footer>
