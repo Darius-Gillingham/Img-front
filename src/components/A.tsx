@@ -1,6 +1,3 @@
-// File: app/components/A.tsx
-// Commit: explain and visually represent serverA's GPT-driven prompt component generation process
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -23,8 +20,15 @@ type ComponentSet = {
   mood: string;
 };
 
+const columns: (keyof ComponentSet)[] = [
+  'noun1', 'noun2', 'verb',
+  'adjective1', 'adjective2',
+  'style', 'setting', 'era', 'mood'
+];
+
 export default function A() {
   const [rows, setRows] = useState<ComponentSet[]>([]);
+  const [scramble, setScramble] = useState<ComponentSet | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,20 +37,25 @@ export default function A() {
         .from('prompt_components')
         .select('*')
         .order('id', { ascending: false })
-        .limit(10);
+        .limit(20);
 
-      if (error) {
-        console.warn('✗ Failed to load prompt_components:', error);
-        setLoading(false);
-        return;
+      if (!error && data) {
+        setRows(data as ComponentSet[]);
       }
-
-      setRows(data as ComponentSet[]);
       setLoading(false);
     }
 
     loadPromptComponentRows();
   }, []);
+
+  function generateScramble() {
+    const randomSet: any = {};
+    for (const key of columns) {
+      const pool = rows.map(row => row[key]).filter(Boolean);
+      randomSet[key] = pool[Math.floor(Math.random() * pool.length)];
+    }
+    setScramble(randomSet as ComponentSet);
+  }
 
   return (
     <div className="space-y-8 text-gray-800 text-sm max-w-4xl mx-auto">
@@ -91,26 +100,50 @@ export default function A() {
       {/* Live Preview */}
       <section className="space-y-4">
         <h3 className="text-lg font-medium text-gray-700">Recent Component Sets</h3>
-        {loading ? (
-          <p className="text-gray-500 italic">Loading prompt components...</p>
-        ) : rows.length === 0 ? (
-          <p className="text-gray-500 italic">No data found in the <code>prompt_components</code> table.</p>
-        ) : (
-          <ul className="grid gap-4">
-            {rows.map((set, i) => (
-              <li key={i} className="bg-gray-50 border rounded-md p-3 text-xs font-mono space-y-1 leading-snug">
-                <div><strong>noun1:</strong> {set.noun1}</div>
-                <div><strong>noun2:</strong> {set.noun2}</div>
-                <div><strong>verb:</strong> {set.verb}</div>
-                <div><strong>adjective1:</strong> {set.adjective1}</div>
-                <div><strong>adjective2:</strong> {set.adjective2}</div>
-                <div><strong>style:</strong> {set.style}</div>
-                <div><strong>setting:</strong> {set.setting}</div>
-                <div><strong>era:</strong> {set.era}</div>
-                <div><strong>mood:</strong> {set.mood}</div>
-              </li>
-            ))}
-          </ul>
+        <ul className="grid gap-4">
+          {rows.map((set, i) => (
+            <li key={i} className="bg-gray-50 border rounded-md p-3 text-xs font-mono space-y-1 leading-snug">
+              <div><strong>noun1:</strong> {set.noun1}</div>
+              <div><strong>noun2:</strong> {set.noun2}</div>
+              <div><strong>verb:</strong> {set.verb}</div>
+              <div><strong>adjective1:</strong> {set.adjective1}</div>
+              <div><strong>adjective2:</strong> {set.adjective2}</div>
+              <div><strong>style:</strong> {set.style}</div>
+              <div><strong>setting:</strong> {set.setting}</div>
+              <div><strong>era:</strong> {set.era}</div>
+              <div><strong>mood:</strong> {set.mood}</div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Scrambled Simulation */}
+      <section className="space-y-4 border-t pt-6">
+        <h3 className="text-lg font-medium text-gray-700">Simulated Wordset Output</h3>
+        <p>
+          Using the data shown above, the system can generate a simulated <code>serverB</code>-style wordset by randomly selecting one
+          value from each of the 9 component fields. This mimics the actual batching process used in production.
+        </p>
+
+        <button
+          onClick={generateScramble}
+          className="px-4 py-2 bg-blue-800 text-white text-xs rounded shadow hover:bg-blue-900"
+        >
+          Generate Scrambled Wordset
+        </button>
+
+        {scramble && (
+          <div className="bg-white border rounded-md p-4 text-xs font-mono leading-relaxed shadow-sm">
+            <div><strong>noun1:</strong> {scramble.noun1}</div>
+            <div><strong>noun2:</strong> {scramble.noun2}</div>
+            <div><strong>verb:</strong> {scramble.verb}</div>
+            <div><strong>adjective1:</strong> {scramble.adjective1}</div>
+            <div><strong>adjective2:</strong> {scramble.adjective2}</div>
+            <div><strong>style:</strong> {scramble.style}</div>
+            <div><strong>setting:</strong> {scramble.setting}</div>
+            <div><strong>era:</strong> {scramble.era}</div>
+            <div><strong>mood:</strong> {scramble.mood}</div>
+          </div>
         )}
       </section>
 
