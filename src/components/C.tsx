@@ -1,5 +1,5 @@
 // File: app/components/ComponentC.tsx
-// Commit: add horizontal image scroller pulling signed URLs from Supabase bucket
+// Commit: log errors when generating Supabase signed URLs for images
 
 'use client';
 
@@ -29,17 +29,23 @@ export default function ComponentC() {
         return;
       }
 
-      const allPngs = (data ?? []).filter((f) => f.name.endsWith('.png'));
+      console.log('✓ Files in bucket:', data);
 
-      // Shuffle
+      const allPngs = (data ?? []).filter((f) => f.name.endsWith('.png'));
       const shuffled = allPngs.sort(() => Math.random() - 0.5);
-      const selected = shuffled.slice(0, 30); // Show 30 random images
+      const selected = shuffled.slice(0, 30);
 
       const urls = await Promise.all(
         selected.map(async (file) => {
-          const { data: urlData } = await supabase.storage
+          const { data: urlData, error: urlError } = await supabase.storage
             .from('generated-images')
             .createSignedUrl(file.name, 3600);
+
+          if (urlError) {
+            console.warn(`✗ Failed to generate signed URL for ${file.name}:`, urlError);
+            return '';
+          }
+
           return urlData?.signedUrl || '';
         })
       );
@@ -61,7 +67,6 @@ export default function ComponentC() {
     <div className="relative w-full space-y-4">
       <h2 className="text-xl font-bold pl-2">Random Images</h2>
       <div className="relative">
-        {/* Left Button */}
         <button
           onClick={() => scroll('left')}
           className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white shadow rounded-full hover:bg-gray-100 hidden sm:block"
@@ -69,7 +74,6 @@ export default function ComponentC() {
           <ChevronLeft size={24} />
         </button>
 
-        {/* Image Row */}
         <div
           ref={scrollRef}
           className="flex overflow-x-auto scroll-smooth space-x-4 px-2 py-2 scrollbar-hide"
@@ -84,7 +88,6 @@ export default function ComponentC() {
           ))}
         </div>
 
-        {/* Right Button */}
         <button
           onClick={() => scroll('right')}
           className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white shadow rounded-full hover:bg-gray-100 hidden sm:block"
