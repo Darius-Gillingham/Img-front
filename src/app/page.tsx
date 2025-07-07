@@ -1,3 +1,6 @@
+// File: app/page.tsx
+// Commit: render dashboard layout with sections A, B, and C
+
 'use client';
 
 import A from "@/components/A";

@@ -1,3 +1,6 @@
+// File: app/components/B.tsx
+// Commit: mimic serverB by allowing manual wordset creation and upload to Supabase `wordsets/` bucket
+
 'use client';
 
 import { useState } from 'react';
@@ -8,33 +11,38 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function B() {
+export default function ComponentB() {
   const [inputWords, setInputWords] = useState('');
   const [message, setMessage] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
     const words = inputWords
       .split(',')
       .map(w => w.trim())
       .filter(Boolean);
 
     if (words.length === 0) {
-      setMessage('Please enter at least one word.');
+      setMessage('✗ Please enter at least one word.');
       return;
     }
 
     const wordsetObj = { wordsets: [words] };
     const fileName = `wordset-${Date.now()}.json`;
 
+    const blob = new Blob([JSON.stringify(wordsetObj, null, 2)], {
+      type: 'application/json',
+    });
+
     const { error } = await supabase.storage
       .from('wordsets')
-      .upload(fileName, JSON.stringify(wordsetObj), {
-        contentType: 'application/json'
+      .upload(fileName, blob, {
+        upsert: false,
       });
 
     if (error) {
-      console.error(error);
+      console.error('✗ Upload failed:', error);
       setMessage('✗ Upload failed.');
     } else {
       setMessage(`✓ Wordset uploaded as ${fileName}`);
@@ -64,7 +72,9 @@ export default function B() {
         </button>
       </form>
 
-      {message && <p className="text-sm text-gray-600">{message}</p>}
+      {message && (
+        <p className="text-sm text-gray-600 whitespace-pre-line">{message}</p>
+      )}
     </div>
   );
 }
