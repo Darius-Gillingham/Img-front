@@ -1,5 +1,5 @@
 // File: app/components/B.tsx
-// Commit: add debug logging to track file listing and URL generation from Supabase bucket
+// Commit: fix empty list by filtering Supabase files via MIME type instead of filename extension
 
 'use client';
 
@@ -32,10 +32,10 @@ export default function B() {
 
       console.log('✓ Files in bucket:', data);
 
-      const allFiles = (data ?? []).filter((f) => f.name.toLowerCase().endsWith('.png'));
-      console.log('✓ PNG files found:', allFiles.map(f => f.name));
+      const allImages = (data ?? []).filter((f) => f.metadata?.mimetype === 'image/png');
+      console.log('✓ PNG files found:', allImages.map(f => f.name));
 
-      const shuffled = allFiles.sort(() => Math.random() - 0.5);
+      const shuffled = allImages.sort(() => Math.random() - 0.5);
       const selected = shuffled.slice(0, 15);
 
       console.log('✓ Selected 15 random files:', selected.map(f => f.name));
