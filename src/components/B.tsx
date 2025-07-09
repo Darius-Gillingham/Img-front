@@ -1,8 +1,7 @@
-// File: app/components/B.tsx
-// Commit: fix empty list by filtering Supabase files via MIME type instead of filename extension
-
 'use client';
 
+// File: app/components/B.tsx
+// Commit: fallback to checking signed URL suffix for .png due to missing Supabase metadata
 
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
@@ -32,10 +31,8 @@ export default function B() {
 
       console.log('✓ Files in bucket:', data);
 
-      const allImages = (data ?? []).filter((f) => f.metadata?.mimetype === 'image/png');
-      console.log('✓ PNG files found:', allImages.map(f => f.name));
-
-      const shuffled = allImages.sort(() => Math.random() - 0.5);
+      const allFiles = data ?? [];
+      const shuffled = allFiles.sort(() => Math.random() - 0.5);
       const selected = shuffled.slice(0, 15);
 
       console.log('✓ Selected 15 random files:', selected.map(f => f.name));
@@ -51,12 +48,13 @@ export default function B() {
             return '';
           }
 
-          console.log(`✓ Signed URL for ${file.name}:`, urlData?.signedUrl);
-          return urlData?.signedUrl || '';
+          const url = urlData?.signedUrl ?? '';
+          console.log(`✓ Signed URL for ${file.name}:`, url);
+          return url;
         })
       );
 
-      const validUrls = urls.filter(Boolean);
+      const validUrls = urls.filter((url) => url && url.toLowerCase().includes('.png'));
       console.log('✓ Final URL list (filtered):', validUrls);
 
       setImageUrls(validUrls);
