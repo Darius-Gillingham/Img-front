@@ -1,5 +1,8 @@
 'use client';
 
+// File: app/components/B.tsx
+// Commit: reduce displayed image count from 30 to 15 and embed metadata comments inline
+
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -26,11 +29,9 @@ export default function B() {
         return;
       }
 
-      console.log('✓ Files in bucket:', data);
-
       const allPngs = (data ?? []).filter((f) => f.name.endsWith('.png'));
       const shuffled = allPngs.sort(() => Math.random() - 0.5);
-      const selected = shuffled.slice(0, 30);
+      const selected = shuffled.slice(0, 15); // Reduced from 30 to 15
 
       const urls = await Promise.all(
         selected.map(async (file) => {
@@ -57,7 +58,10 @@ export default function B() {
     const container = scrollRef.current;
     if (!container) return;
     const scrollAmount = container.offsetWidth * 0.8;
-    container.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+    container.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth',
+    });
   };
 
   return (
