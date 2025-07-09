@@ -1,7 +1,8 @@
+// File: app/components/B.tsx
+// Commit: add debug logging to track file listing and URL generation from Supabase bucket
+
 'use client';
 
-// File: app/components/B.tsx
-// Commit: reduce displayed image count from 30 to 15 and embed metadata comments inline
 
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
@@ -29,9 +30,15 @@ export default function B() {
         return;
       }
 
-      const allPngs = (data ?? []).filter((f) => f.name.endsWith('.png'));
-      const shuffled = allPngs.sort(() => Math.random() - 0.5);
-      const selected = shuffled.slice(0, 15); // Reduced from 30 to 15
+      console.log('✓ Files in bucket:', data);
+
+      const allFiles = (data ?? []).filter((f) => f.name.toLowerCase().endsWith('.png'));
+      console.log('✓ PNG files found:', allFiles.map(f => f.name));
+
+      const shuffled = allFiles.sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, 15);
+
+      console.log('✓ Selected 15 random files:', selected.map(f => f.name));
 
       const urls = await Promise.all(
         selected.map(async (file) => {
@@ -44,11 +51,15 @@ export default function B() {
             return '';
           }
 
+          console.log(`✓ Signed URL for ${file.name}:`, urlData?.signedUrl);
           return urlData?.signedUrl || '';
         })
       );
 
-      setImageUrls(urls.filter(Boolean));
+      const validUrls = urls.filter(Boolean);
+      console.log('✓ Final URL list (filtered):', validUrls);
+
+      setImageUrls(validUrls);
     }
 
     fetchRandomImageUrls();
