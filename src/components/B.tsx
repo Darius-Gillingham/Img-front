@@ -1,7 +1,7 @@
 'use client';
 
 // File: app/components/B.tsx
-// Commit: switch image source from Supabase bucket scan to indexed `image_index` table via Railway API
+// Commit: connect image loader to Railway-hosted index API using `NEXT_PUBLIC_IMAGE_API_URL`
 
 import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -13,19 +13,18 @@ export default function B() {
   useEffect(() => {
     async function fetchImageIndex() {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_IMAGE_API_URL}/api/random-images`);
+        const res = await fetch(`https://img-c1-production.up.railway.app/api/random-images`);
         if (!res.ok) throw new Error('Failed to fetch image index');
         const data = await res.json();
         setImageUrls(data);
         console.log('✓ Loaded indexed image URLs:', data);
       } catch (err) {
-  if (err instanceof Error) {
-    console.warn('✗ Failed to load images:', err.message);
-  } else {
-    console.warn('✗ Failed to load images:', err);
-  }
-}
-
+        if (err instanceof Error) {
+          console.warn('✗ Failed to load images:', err.message);
+        } else {
+          console.warn('✗ Failed to load images:', err);
+        }
+      }
     }
 
     fetchImageIndex();
