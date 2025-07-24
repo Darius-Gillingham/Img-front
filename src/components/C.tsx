@@ -1,5 +1,5 @@
 // File: src/app/components/C.tsx
-// Commit: view clustered image groups from serverF via Railway endpoint
+// Commit: handle cluster fetch errors and render grouped images with fallback safety
 
 'use client'
 
@@ -19,8 +19,11 @@ export default function C() {
 
   useEffect(() => {
     fetch(`${BASE}/api/clusters`)
-      .then(res => res.json())
-      .then(setClusters)
+      .then(res => res.ok ? res.json() : Promise.reject('Server error'))
+      .then(data => {
+        if (Array.isArray(data)) setClusters(data)
+        else console.error('Invalid response format:', data)
+      })
       .catch(err => console.error('Failed to load clusters:', err))
   }, [])
 
@@ -28,8 +31,12 @@ export default function C() {
     try {
       const res = await fetch(`${BASE}${relativePath}`)
       const data = await res.json()
-      setImages(data)
-      setSelected(relativePath)
+      if (Array.isArray(data)) {
+        setImages(data)
+        setSelected(relativePath)
+      } else {
+        console.error('Invalid image data format', data)
+      }
     } catch (err) {
       console.error('Failed to load image list:', err)
     }
